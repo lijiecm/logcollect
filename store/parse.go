@@ -4,34 +4,43 @@ import (
 	"github.com/weihualiu/logcollect/util"
 	"log"
 	"os"
-	"path"
+	"path/filepath"
 )
 
 func Parse(data []byte) {
-	pack, err := NewPackCommon(data)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	if pack.Type == byte(0x01) {
-		//api
-		//tag1:项目名称,tag2:项目环境,tag3:接口名称
-		//创建存储目录
-		basepath := "/var/log/logcollect/api/"
-		err = os.MkdirAll(basepath, 0644)
-		if err != nil {
-			log.Fatal(err)
-		}
-		if int(pack.TagNum) < 3 {
-			log.Fatal("data tag number error!")
-		}
-		filePath := path.Join(basepath, string(pack.TagList[0].Name), string(pack.TagList[1].Name), string(pack.TagList[2].Name))
-		//写入文件
-		err = util.AppendToFile(filePath, pack.Body)
+	if data[5] == byte(0x00) {
+		//收到心跳包，回复ACK
+		log.Println("heartbeat data")
+	} else {
+		pack, err := NewPackCommon(data)
 		if err != nil {
 			log.Fatal(err)
 		}
 
+		if pack.Type == byte(0x01) {
+			//api
+			//tag1:项目名称,tag2:项目环境,tag3:接口名称
+			if int(pack.TagNum) < 3 {
+				log.Fatal("data tag number error!")
+			}
+			tag1 := util.BytesToString(pack.TagList[0].Name)
+			tag2 := util.BytesToString(pack.TagList[1].Name)
+			tag3 := util.BytesToString(pack.TagList[2].Name)
+			basepath := filepath.Join("data/api", tag1, tag2, util.BytesToString(pack.Date))
+			log.Println(basepath)
+			err = os.MkdirAll(basepath, os.ModePerm)
+			//创建存储目录
+			if err != nil {
+				log.Println(err)
+			}
+			filePath := filepath.Join(basepath, tag3)
+			//写入文件
+			err = util.AppendToFile(filePath, pack.Body)
+			if err != nil {
+				log.Println(err)
+			}
+
+		}
 	}
 
 }

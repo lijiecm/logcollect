@@ -10,7 +10,7 @@ import (
 type PackCommon struct {
 	Header  byte
 	Len     uint32 //4bytes
-	Type    byte   //数据类型 1 api 2 log
+	Type    byte   //数据类型 0 heartbeat 1 api 2 log
 	TagNum  uint8
 	TagList []*Tag
 	Date    []byte //7bytes
@@ -42,13 +42,13 @@ func NewPackCommon(data []byte) (*PackCommon, error) {
 	for i := 0; i < int(packComm.TagNum); i++ {
 		t := new(Tag)
 		t.Name = make([]byte, 12)
-		copy(t.Name, data[7+i:7+12+i])
+		copy(t.Name, util.BytesTrim(data[7+12*i:7+12*(i+1)]))
 		packComm.TagList[i] = t
 	}
 
 	beforeLen := 7 + int(packComm.TagNum)*12
 	packComm.Date = data[beforeLen : beforeLen+8]
-	packComm.Body = data[beforeLen+8 : len(data)-beforeLen-8-1]
+	packComm.Body = data[beforeLen+8 : len(data)-1]
 
 	return packComm, nil
 

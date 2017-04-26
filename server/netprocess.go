@@ -30,21 +30,24 @@ func Start() {
 func receive(conn net.Conn) {
 	log.Println("new conenction come in.")
 	// one package buffer
-	packageData := make([]byte, 1024)
+	packageData := make([]byte, 0)
 	// loop receive
 	for {
 		readBuf := make([]byte, 1024)
-		_, err := conn.Read(readBuf)
+		readLen, err := conn.Read(readBuf)
 
 		switch err {
 		case nil:
-			packageData = append(packageData, readBuf...)
+			packageData = append(packageData, readBuf[:readLen]...)
 			//数据拆分
 			flag := true
 			for flag {
-				if packageData[0] == byte(0xF0) {
+				//log.Printf("%x\n", packageData)
+				if len(packageData) == 0 {
+					flag = false
+				} else if packageData[0] == byte(0xF0) {
 					packageLen := util.BytesToUInt32(packageData[1:5])
-					log.Printf("data buffer len:%d, current package len:%d\n", len(packageData), packageLen)
+					//log.Printf("data buffer len:%d, current package len:%d\n", len(packageData), packageLen)
 					if uint32(len(packageData)) >= packageLen {
 						//如果数据满足一个完整包则进入下一步处理
 						store.Parse(packageData[0:packageLen])
@@ -63,6 +66,7 @@ func receive(conn net.Conn) {
 		case syscall.EAGAIN:
 			continue
 		default:
+			log.Println(err)
 			goto DISCONNECT
 		}
 	}
