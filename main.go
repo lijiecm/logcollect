@@ -4,13 +4,19 @@ import (
 	"github.com/weihualiu/logcollect/server"
 	"log"
 	"os"
+	"time"
 )
 
 func main() {
 	//logset()
 	log.Printf("logcollect is starting......")
 
-	server.Start()
+	go server.Start()
+	go server.HTTPStart()
+
+	for {
+		time.Sleep(10 * time.Second)
+	}
 }
 
 func logset() {
