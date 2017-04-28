@@ -1,0 +1,15 @@
+body{
+    background-color: #332115;
+    color : #FFF;
+    font-family: '黑体';
+}
+button ,select, input{
+    color : #000;
+    font-family: '隶书';
+}
+input:read-only{
+    background-color: #ddd;
+}
+select:disabled{
+    background-color: #ddd;
+}

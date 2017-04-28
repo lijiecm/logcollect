@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>日志监控系统</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no" />
+    <meta name="format-detection" content="telephone=no,email=no,adress=no,date=no" />
+    <script src="./js/jquery.min.js"></script>
+    <script src="./js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="./css/bootstrap.css">
+    <link rel="stylesheet" href="./css/bootstrap-theme.css">
+    <link rel="stylesheet" href="./css/websocket.css">
+    <script>
+        var ws = null; // websocket句柄
+        var serverUrl = 'ws://localhost:8010/log/ws'; // websocket服务地址
+        var wsparam = null; // websocket初始化参数
+
+        var messageList = []; // 最多显示列表
+        var printworker = null; // 打印日志的句柄
+
+        function innerZero(num, n){
+            return Array(n>num.toString().length?(n-num.toString().length+1):0).join(0) + num.toString();
+        }
+
+        var date = new Date(); // 获取当前日期
+        var wstime = date.getFullYear().toString() + innerZero(date.getMonth()+1,2) + innerZero(date.getDate(), 2); // 获取当前日期
+
+        function clearPing(){
+            $('#content').html('');
+
+            messageList = [];
+        }
+
+        function changeHtml(str){
+            return str.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
+        }
+
+        function genData(list){
+            var str = '';
+            for(i=0; i<list.length; i++){
+                str = str +  '<div style="padding: 2px; word-wrap:break-word">' + changeHtml(list[i]) + '</div>';
+            }
+            return str;
+        }
+
+        function wsclose(){
+            if(ws){
+                ws.close();
+                alert('连接已断开');
+                ws = null;
+                wsparam = null;
+                $('#show').css('display','none');
+                $("#trancode").attr('readonly', false);
+                $("#xiangmu").attr('disabled', false);
+                $("#huanjing").attr('disabled', false);
+            }
+        }
+
+        function wsstart(){
+            if(!ws){
+                if($("#trancode").val() == ""){
+                    alert("请输入交易码！")
+                    return ;
+                }
+                wsparam = $("#xiangmu").val() + "/" + $("#huanjing").val() + "/" + wstime + "/" + $("#trancode").val().trim();
+                $("#trancode").attr('readonly', true);
+                $("#xiangmu").attr('disabled', true);
+                $("#huanjing").attr('disabled', true);
+                console.log(wsparam);
+                if('WebSocket' in window){
+
+                    ws = new WebSocket(serverUrl);
+
+                    // 连接之后的方法
+                    ws.onopen = function(){
+                        alert('连接已建立成功');
+                        $('#show').css('display','block');
+                        ws.send(wsparam);
+                    }
+
+                    // 接收服务端返回的消息
+                    ws.onmessage = function(event){
+                        console.log(event.data);
+                        var datalength = $('#datalength').val();
+                        if(messageList.length > datalength){
+                            messageList.shift();
+                        }
+                        messageList.push(event.data);
+                        $('#content').html(genData(messageList));
+                        var nscrollHeight = $('#content')[0].scrollHeight;
+                        var nHeight = $('#content').height();
+                        if(nscrollHeight > nHeight){
+                            $('#content').scrollTop(nscrollHeight - nHeight);
+                        }
+                    }
+
+                    // 服务端关闭连接
+                    ws.onclose = function(){
+                        wsclose();
+                    }
+                }
+            }else{
+                alert('请勿重复连接')
+            }
+        }
+
+        (function(){
+            var lastDown;
+            $(document).keyup(function(event){
+                lastDown = '';
+            })
+
+            $(document).keydown(function(event){
+                if(event.keyCode == '67' && lastDown == '17'){
+                    wsclose();
+                    event.preventDefault();
+                }else if(event.keyCode == '81' && lastDown == '17'){
+                    wsstart();
+                    event.preventDefault();
+                }else if(event.keyCode == '68' && lastDown == '17'){
+                    clearPing();
+                    event.preventDefault();
+                }else{
+                    lastDown = event.keyCode;
+                }
+            })
+        })();
+    </script>
+</head>
+<body>
+    <div class="container">
+        <div class="page-header">
+            <h1> 日志监控系统 </h1>
+        </div>
+        <div >
+            <span >项目</span>
+            <select style="margin-left:5px; " id='xiangmu'>
+                <option value ="app1" selected="selected">app1</option>
+                <option value ="app2">app2</option>
+            </select>
+            <span style="margin-left:10px;">环境</span>
+            <select style="margin-left:5px;" id='huanjing'>
+                <option value ="uat" selected="selected">uat</option>
+                <option value ="prd">prd</option>
+                <option value ="sit">sit</option>
+                <option value ="dev">dev</option>
+            </select>
+            <span style="margin-left:10px;">接口名称</span>
+            <input type='text' id='trancode' style="width:100px;height:20px;" />
+            <span style="margin-left:10px;">最多显示行数</span>
+            <select style="margin-left:5px;" id='datalength'>
+                <option value ="200" selected="selected">200</option>
+                <option value ="500">500</option>
+                <option value ="1000">1000</option>
+            </select>
+        </div>
+        <div style="margin-top: 10px;">
+          <button id='startBtn' onclick="wsstart()" >连接(Ctrl+Q)</button>
+          <button id='startBtn' onclick="wsclose()" >断开(Ctrl+C)</button>
+          <button id='startBtn' onclick="clearPing()" >清屏(Ctrl+D)</button>
+          <div id='show' style='float:right; display:none'>
+              <span  >正在记录日志...</span>
+          </div>
+        </div>
+        <div id='content' style="background: #000; margin-top: 10px; padding:5px; overflow:auto; " >
+        </div>
+        <script>
+            var windowHeight = window.innerHeight;
+            var contentHeight = windowHeight - $('#content').offset().top - 20 + 'px';
+            $('#content').css('height', contentHeight);
+        </script>
+    </div>
+</body>
+</html>

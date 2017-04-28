@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 func Parse(data []byte) {
@@ -35,6 +36,12 @@ func Parse(data []byte) {
 			}
 			filePath := filepath.Join(basepath, tag3)
 			//写入文件
+			strtime := "------------------" + time.Now().Truncate(time.Second).String() + "----------------------"
+			err = util.AppendToFile(filePath, []byte(strtime))
+			if err != nil {
+				log.Println(err)
+			}
+
 			err = util.AppendToFile(filePath, pack.Body)
 			if err != nil {
 				log.Println(err)
