@@ -16,7 +16,7 @@ type MonitorList struct {
 
 func NewMonitorList() *MonitorList {
 	chs := make(map[string][](chan []byte), 1000)
-	return &MonitorList{chs}
+	return &MonitorList{chs:chs}
 }
 
 // 根据key设置通道
