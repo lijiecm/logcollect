@@ -39,14 +39,14 @@ func Parse(data []byte) {
 			//写入文件
 			strtime := "------------------" + time.Now().Truncate(time.Second).String() + "----------------------"
 			// data write memory
-			monitors.Write(filepath.Join(tag1,tag2,util.BytesToString(pack.Date),tag3), []byte(strtime))
+			monitors.Write(filepath.Join(tag1,tag2,util.BytesToString(pack.Date),tag3), []byte(strtime)),
 			// data write local storage
 			err = util.AppendToFile(filePath, []byte(strtime))
 			if err != nil {
 				log.Println(err)
 			}
 			// data write memory
-			monitors.Write(filepath.Join(tag1,tag2,util.BytesToString(pack.Date),tag3), pack.Body)
+			monitors.Write(filepath.Join(tag1,tag2,util.BytesToString(pack.Date),tag3), pack.Body),
 			// data write local storage
 			err = util.AppendToFile(filePath, pack.Body)
 			if err != nil {
