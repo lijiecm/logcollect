@@ -37,7 +37,7 @@ func (m *MonitorList) Set(key string, wsch chan []byte) error {
 
 // 根据key删除对应channel
 func (m *MonitorList) Delete(key string) error {
-	wsch, ok := m.chs[key]
+	_, ok := m.chs[key]
 	if !ok {
 		return errors.New("not found channels for " + key)
 	}
