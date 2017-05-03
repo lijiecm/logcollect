@@ -3,10 +3,12 @@ package server
 import (
 	"github.com/gorilla/websocket"
 	//"github.com/hpcloud/tail"
+	"github.com/weihualiu/logcollect/store"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 var upgrader = websocket.Upgrader{
@@ -48,7 +50,6 @@ func handleSelectArg(w http.ResponseWriter, r *http.Request) {
 func wsReader(ws *websocket.Conn) {
 	defer func() {
 		ws.Close()
-		close(dataCh)
 		log.Println("ws is closed!")
 	}()
 	ws.SetReadLimit(512)
@@ -59,8 +60,9 @@ func wsReader(ws *websocket.Conn) {
 			break
 		}
 		log.Printf("read.... %s", string(content))
+
 		dataCh := make(chan []byte, 10)
-		monitors.Set(string(content), dataCh)
+		store.Monitors.Set(string(content), dataCh)
 
 		currwd, err := os.Getwd()
 		fpath := filepath.Join(currwd, "data/api/", string(content))
@@ -73,29 +75,27 @@ func wsWriter(ws *websocket.Conn, filepath string, dataCh chan []byte) {
 		ws.Close()
 		close(dataCh)
 		log.Println("ws is closed!")
-
 	}()
-
 	for {
-		// t, err := tail.TailFile(filepath, tail.Config{Follow: true, ReOpen: true, Location: &tail.SeekInfo{Offset: 0, Whence: os.SEEK_END}})
-		// if err != nil {
-		// 	log.Printf("tail file failed, err: %v", err)
-		// 	break
-		// }
-		// for line := range t.Lines {
-		// 	if err := ws.WriteMessage(websocket.TextMessage, []byte(line.Text)); err != nil {
-		// 		log.Println("read tail file end,", err.Error())
-		// 		return
-		// 	}
-		// }
+		//t, err := tail.TailFile(filepath, tail.Config{Follow: true, ReOpen: true, Location: &tail.SeekInfo{Offset: 0, Whence: os.SEEK_END}})
+		//if err != nil {
+		//	log.Printf("tail file failed, err: %v", err)
+		//	break
+		//}
+		//for line := range t.Lines {
+		//	if err := ws.WriteMessage(websocket.TextMessage, []byte(line.Text)); err != nil {
+		//		log.Println("read tail file end,", err.Error())
+		//		return
+		//	}
+		//}
+		time.Sleep(time.Millisecond * 100)
 		select {
-		case content, ok := <-dataCh; ok :
+		case content := <-dataCh:
 			if err := ws.WriteMessage(websocket.TextMessage, content); err != nil {
 				log.Println("read tail file end,", err.Error())
 				return
 			}
 		default:
-
 		}
 	}
 

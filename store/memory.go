@@ -2,6 +2,7 @@ package store
 
 import (
 	"errors"
+	"log"
 	"sync"
 )
 
@@ -16,18 +17,19 @@ type MonitorList struct {
 
 func NewMonitorList() *MonitorList {
 	chs := make(map[string][](chan []byte), 1000)
-	return &MonitorList{chs:chs}
+	return &MonitorList{chs: chs}
 }
 
 // 根据key设置通道
 func (m *MonitorList) Set(key string, wsch chan []byte) error {
+	log.Println("key: ", key)
 	m.mu.Lock()
 	_, ok := m.chs[key]
 	if !ok {
 		ch := make([](chan []byte), 0)
 		ch = append(ch, wsch)
 		m.chs[key] = ch
-	}else{
+	} else {
 		chs := m.chs[key]
 		m.chs[key] = append(chs, wsch)
 	}
@@ -53,6 +55,7 @@ func (m *MonitorList) Delete(key string) error {
 func (m *MonitorList) Write(key string, content []byte) error {
 	wsch, ok := m.chs[key]
 	if !ok {
+		log.Println("not found channels for " + key)
 		return errors.New("not found channels for " + key)
 	}
 
@@ -66,20 +69,23 @@ func (m *MonitorList) Write(key string, content []byte) error {
 		go func(ch chan []byte, d []byte) {
 			defer func() {
 				wg.Add(-1)
-				if err := recover(); err != nil {
-					// 清理该channel
-				}else{
-					//true
+				if err := recover(); err == nil {
 					chlock.Lock()
 					chsNew = append(chsNew, ch)
 					chlock.Unlock()
+				} else {
+					log.Println("write channel error!")
 				}
+
 			}()
 			ch <- d
 		}(ch, content)
+
 	}
 	wg.Wait()
+	m.mu.Lock()
 	m.chs[key] = chsNew
+	m.mu.Unlock()
 
 	return nil
 }

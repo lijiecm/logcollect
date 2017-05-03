@@ -50,7 +50,9 @@ func receive(conn net.Conn) {
 					//log.Printf("data buffer len:%d, current package len:%d\n", len(packageData), packageLen)
 					if uint32(len(packageData)) >= packageLen {
 						//如果数据满足一个完整包则进入下一步处理
-						store.Parse(packageData[0:packageLen])
+						parseData := make([]byte, packageLen)
+						copy(parseData, packageData[0:packageLen])
+						store.Parse(parseData)
 						//减去完整包
 						packageData = packageData[packageLen:]
 					} else {
