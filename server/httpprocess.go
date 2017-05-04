@@ -35,7 +35,7 @@ func staticPage() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Println(filepath.Join(wd, "public/"))
+	//log.Println(filepath.Join(wd, "public/"))
 	http.Handle("/log/", http.StripPrefix("/log/", http.FileServer(http.Dir(filepath.Join(wd, "public/")))))
 }
 
@@ -59,7 +59,7 @@ func wsReader(ws *websocket.Conn) {
 		if err != nil {
 			break
 		}
-		log.Printf("read.... %s", string(content))
+		//log.Printf("read.... %s", string(content))
 
 		dataCh := make(chan []byte, 10)
 		store.Monitors.Set(string(content), dataCh)
@@ -112,7 +112,7 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
 	}
 	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Println("test")
+		//log.Println("test")
 		log.Fatal(err)
 	}
 	wsReader(ws)

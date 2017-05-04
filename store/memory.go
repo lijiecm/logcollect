@@ -52,11 +52,10 @@ func (m *MonitorList) Delete(key string) error {
 
 // 向对应channel写数据
 // 同时清理已关闭的channel
-func (m *MonitorList) Write(key string, content []byte) error {
+func (m *MonitorList) Write(key string, content []byte) {
 	wsch, ok := m.chs[key]
 	if !ok {
-		log.Println("not found channels for " + key)
-		return errors.New("not found channels for " + key)
+		//log.Println("not found channels for " + key)
 	}
 
 	chsNew := make([](chan []byte), 0)
@@ -87,5 +86,4 @@ func (m *MonitorList) Write(key string, content []byte) error {
 	m.chs[key] = chsNew
 	m.mu.Unlock()
 
-	return nil
 }

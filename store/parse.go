@@ -10,13 +10,15 @@ import (
 )
 
 func Parse(data []byte) {
-	if data == nil || len(data) < 5 {
-		log.Println("data is nil")
-		return
+	if data == nil {
+		log.Fatal("data is nil")
+	}
+	if len(data) < 5 {
+		log.Fatal(data)
 	}
 	if data[5] == byte(0x00) {
 		//收到心跳包，回复ACK
-		log.Println("heartbeat data")
+		//log.Println("heartbeat data")
 	} else {
 		pack, err := model.NewPackCommon(data)
 		if err != nil {
@@ -33,7 +35,7 @@ func Parse(data []byte) {
 			tag2 := util.BytesToString(pack.TagList[1].Name)
 			tag3 := util.BytesToString(pack.TagList[2].Name)
 			basepath := filepath.Join("data/api", tag1, tag2, util.BytesToString(pack.Date))
-			log.Println(basepath)
+			//log.Println(basepath)
 			strtime := "------------------" + time.Now().Truncate(time.Second).String() + "----------------------"
 
 			// memory save

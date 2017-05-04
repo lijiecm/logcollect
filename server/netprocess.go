@@ -42,26 +42,40 @@ func receive(conn net.Conn) {
 			//数据拆分
 			flag := true
 			for flag {
-				//log.Printf("%x\n", packageData)
-				if len(packageData) == 0 {
+				if packageData == nil {
+					flag = false
+				}
+				pdLen := len(packageData)
+				if pdLen == 0 || pdLen < 16 {
 					flag = false
 				} else if packageData[0] == byte(0xF0) {
 					packageLen := util.BytesToUInt32(packageData[1:5])
-					//log.Printf("data buffer len:%d, current package len:%d\n", len(packageData), packageLen)
-					if uint32(len(packageData)) >= packageLen {
+					if packageLen == 0 {
+						packageData = make([]byte, 0, 0)
+						flag = false
+					} else if uint32(len(packageData)) >= packageLen {
 						//如果数据满足一个完整包则进入下一步处理
 						parseData := make([]byte, packageLen)
 						copy(parseData, packageData[0:packageLen])
 						store.Parse(parseData)
 						//减去完整包
-						packageData = packageData[packageLen:]
+						if packageLen == uint32(len(packageData)) {
+							packageData = make([]byte, 0, 0)
+							flag = false
+						} else {
+							newSize := len(packageData) - int(packageLen)
+							tmp := make([]byte, newSize, newSize+1)
+							tmp = packageData[packageLen:len(packageData)]
+							packageData = make([]byte, newSize, newSize+1)
+							copy(packageData, tmp)
+						}
 					} else {
 						flag = false
 					}
 				} else {
 					//错误数据，抛弃
-					packageData = nil
-					readBuf = nil
+					packageData = make([]byte, 0, 0)
+					//readBuf = make([]byte, 0)
 					flag = false
 				}
 			}
@@ -74,6 +88,7 @@ func receive(conn net.Conn) {
 	}
 
 DISCONNECT:
+	packageData = nil
 	err := conn.Close()
 	if err != nil {
 		log.Fatal(err)
